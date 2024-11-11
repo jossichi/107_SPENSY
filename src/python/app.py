@@ -152,6 +152,25 @@ def match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree):
 
     return matches
 
+def find_all_relevant_specialties(tree_node, user_specialty):
+    if not tree_node:
+        return []
+
+    # Nếu node là lá và khớp với chuyên môn người dùng
+    if len(tree_node.children) == 0:
+        if tree_node.value.lower() == user_specialty.lower():
+            return [tree_node.value]
+        return []
+
+    # Nếu không phải node lá, tìm kiếm ngược lên các node cha
+    result = []
+    for child in tree_node.children:
+        found_specialties = find_all_relevant_specialties(child, user_specialty)
+        if found_specialties:
+            # Nếu tìm thấy, thêm node cha và các chuyên môn anh/chị em vào kết quả
+            result = [tree_node.value] + found_specialties
+    return result
+
 # Endpoint API để trả về danh sách matches
 @app.route('/api/matches', methods=['GET'])
 def get_matches():
@@ -177,29 +196,39 @@ def find_mentors():
         specialization = data.get("specialization")
         gender = data.get("gender")
 
-        # Filter mentors based on specialization and gender
+        # Chuyên môn người dùng
+        user_specialty = specialization.lower().strip()
+        user_gender = 1 if gender.lower() == "female" else 0
+
+        # Truy vấn cây k-ary để tìm tất cả các chuyên môn bao quát
+        parent_specialties = find_all_relevant_specialties(tree.root, user_specialty)
+
+        if not parent_specialties:
+            return jsonify({"message": "Hệ thống chưa cập nhật lĩnh vực chuyên môn này."}), 404
+
+        # Tìm mentor phù hợp với chuyên môn của người dùng (bao gồm các chuyên môn bao quát)
         matching_mentors = []
 
         for _, mentor in df_mentor.iterrows():
-            mentor_specialty = mentor.filter(like="Chuyên Môn_").idxmax().replace("Chuyên Môn_", "")
-            mentor_gender = "female" if mentor["Giới tính"] == 1 else "male"
+            mentor_specialty = mentor.filter(like="Chuyên Môn_").idxmax().replace("Chuyên Môn_", "").lower().strip()
+            # mentor_gender = "female" if mentor["Giới tính"] == 1 else "male"
+            mentor_gender = mentor["Giới tính"]
 
-            # Check if the mentor matches the provided specialization and gender
-            if mentor_specialty.lower() == specialization.lower() and mentor_gender == gender:
+            # Kiểm tra nếu mentor phù hợp với chuyên môn và giới tính người dùng
+            if mentor_specialty in [specialty.lower() for specialty in parent_specialties] and mentor_gender == user_gender:
                 matching_mentors.append({
                     "mentor": mentor["Họ tên"],
                     "mentor_specialty": mentor_specialty
                 })
 
         if not matching_mentors:
-            return jsonify({"message": "Hệ thống chưa cập nhật mentor phù hợp với chuyên ngành của bạn"}), 404
+            return jsonify({"message": "Hệ thống chưa cập nhật mentor phù hợp với chuyên ngành của bạn."}), 404
 
         return jsonify(matching_mentors)
 
     except Exception as e:
         print(f"Error processing the request: {e}")
         return jsonify({"error": "Internal Server Error"}), 500
-
-
+    
 if __name__ == '__main__':
     app.run(debug=True)

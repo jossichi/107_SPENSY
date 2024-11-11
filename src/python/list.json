@@ -1,165 +1,159 @@
 {
-    "Kinh tế": {
-        "Quản trị kinh doanh": {
-            "Sales": [],
-            "Management": []
-        },
-        "Kinh tế học": [],
-        "Tài chính": {
-            "Tài chính doanh nghiệp": [],
-            "Quản lý tài chính": [],
-            "Tài chính ngân hàng": {
-                "Đầu tư ngân hàng": [],
-                "Tín dụng ngân hàng": []
-            },
-            "Công nghệ tài chính": []
-        },
-        "Ngân hàng": [],
-        "Marketing": {
-            "Content creator": [],
-            "SEO": []
-        },
-        "Kế toán": [],
-        "Kiểm toán": [],
-        "Thương mại quốc tế": [],
-        "Kinh tế phát triển": [],
-        "Kinh tế tài nguyên": [],
-        "Quản lý kinh tế": [],
-        "Bất động sản": [],
-        "Kinh doanh thương mại": [],
-        "Thương mại điện tử": [],
-        "Kinh doanh thời trang và dệt may": []
+  "Kinh tế": {
+    "Quản trị kinh doanh": {
+      "Sales": [],
+      "Management": []
     },
-    "Công nghệ thông tin": {
-        "Công nghệ phần mềm": {
-            "Web Development": [],
-            "Mobile Development": [],
-            "Web/App Development":[]
-        },
-        "Phân tích dữ liệu": [],
-        "Hệ thống thông tin": [],
-        "Mạng máy tính": []
-        
+    "Kinh tế học": [],
+    "Tài chính": {
+      "Tài chính doanh nghiệp": [],
+      "Quản lý tài chính": [],
+      "Tài chính ngân hàng": {
+        "Đầu tư ngân hàng": [],
+        "Tín dụng ngân hàng": []
+      },
+      "Công nghệ tài chính": []
     },
-    "An toàn thông tin":{
-        "An toàn hệ thống":[],
-        "An toàn ứng dụng":[],
-        "An ninh mạng":[]
+    "Ngân hàng": [],
+    "Marketing": {
+      "Content creator": [],
+      "SEO": []
     },
-    "Đổi mới sáng tạo": {
-        "Khởi nghiệp sáng tạo": [],
-        "Phân tích mô hình kinh doanh": [],
-        "Đổi mới sáng tạo và khởi nghiệp": [],
-        "Khởi nghiệp đổi mới sáng tạo tác động xã hội": []
+    "Kế toán": [],
+    "Kiểm toán": [],
+    "Thương mại quốc tế": [],
+    "Kinh tế phát triển": [],
+    "Kinh tế tài nguyên": [],
+    "Quản lý kinh tế": [],
+    "Bất động sản": [],
+    "Kinh doanh thương mại": [],
+    "Thương mại điện tử": [],
+    "Kinh doanh thời trang và dệt may": []
+  },
+  "Công nghệ thông tin": {
+    "Công nghệ phần mềm": {
+      "Web Development": [],
+      "Mobile Development": [],
+      "Web/App Development": []
     },
-    "Sinh học và môi trường": [
-        "Sinh hóa học",
-        "Sinh thái học",
-        "Sinh học tế bào",
-        "Di truyền học",
-        "Hệ sinh thái và quản lý đa dạng sinh học",
-        "Quản lý chất thải và tái chế",
-        "Năng lượng bền vững và hiệu quả năng lượng",
-        "Biến đổi khí hậu và ứng phó với biến đổi khí hậu",
-        "Quản lý tài nguyên nước",
-        "Khoa học đất và quản lý đất",
-        "Công nghệ sinh học",
-        "Sinh học biển",
-        "Sinh lý học",
-        "Vi sinh vật học",
-        "Độc học môi trường",
-        "Quản lý tài nguyên thiên nhiên",
-        "Nuôi trồng thủy hải sản",
-        "Nông nghiệp",
-        "Công nghệ sinh học"
-    ],
-    "Hóa học": [
-        "Hóa hữu cơ",
-        "Hóa vô cơ",
-        "Hóa phân tích",
-        "Hóa lý",
-        "Hóa học vật liệu",
-        "Hóa sinh",
-        "Công nghệ hóa học",
-        "Hóa dầu",
-        "Hóa dược",
-        "Hóa môi trường",
-        "Hóa mỹ phẩm"
-    ],
-    "Quản trị - Quản lý": [
-        "Quản trị doanh nghiệp",
-        "Quản trị rủi ro",
-        "Quản trị nhân sự",
-        "Quản trị chiến lược",
-        "Quản trị sản xuất",
-        "Quản trị chất lượng",
-        "Quản trị dự án",
-        "Quản trị thương hiệu",
-        "Quản trị tài chính",
-        "Quản trị marketing",
-        "Quản trị vận hành",
-        "Khoa học quản lý",
-        "Quản lý công",
-        "Quản trị nhân lực",
-        "Quản trị văn phòng",
-        "Hệ thống thông tin quản lý",
-        "Quan hệ lao động"
-    ],
-    "Công nghệ thực phẩm": {
-        "Phát triển sản phẩm": [],
-        "Phân tích thực phẩm": [
-            "Công nghệ thực phẩm",
-            "Kỹ thuật thực phẩm"
-        ],
-        "Công nghệ sau thu hoạch": [],
-        "Công nghệ chế biến thực phẩm": [],
-        "Công nghệ sinh học thực phẩm": [],
-        "Hoá sinh học thực phẩm": [],
-        "Vi sinh vật học thực phẩm": [],
-        "Dinh dưỡng": [],
-        "An toàn thực phẩm": [],
-        "Quản lý chất lượng": [],
-        "Thiết kế công nghệ và nhà máy thực phẩm": [],
-        "Quản lý chuỗi cung ứng và truy nguyên nguồn gốc thực phẩm": [],
-        "Thực phẩm chức năng": [],
-        "Quản trị nhà hàng và dịch vụ ăn uống": []
-    },
-    "Du lịch và ẩm thực": [
-        "Văn hóa du lịch",
-        "Du lịch ẩm thực",
-        "Quản lý nhà hàng và khách sạn",
-        "Marketing du lịch và ẩm thực",
-        "Quản lý sự kiện",
-        "Quản lý lữ hành",
-        "Hướng dẫn viên du lịch",
-        "Quản lý dịch vụ ăn uống",
-        "Quản lý resort",
-        "Du lịch bền vững",
-        "Phát triển du lịch địa phương",
-        "Nghiên cứu ẩm thực",
-        "Quản lý du lịch quốc tế",
-        "Quản trị nhà hàng và dịch vụ ăn uống",
-        "Quản trị kinh doanh thực phẩm"
-    ],
-    "Lý luận chính trị": [
-        "Trung cấp lý luận chính trị",
-        "Lý luận chính trị"
-    ],
-    "Công nghệ": [
-        "Kỹ thuật thực phẩm",
-        "Hóa học",
-        "Công nghệ sinh học ứng dụng",
-        "Công nghệ thông tin",
-        "Công nghệ thực phẩm",
-        "Khoa học thực phẩm",
-        "Công nghệ chế biến sản phẩm thủy sản",
-        "Công nghệ Hữu cơ",
-        "Hoá mỹ phẩm"
-    ],
-    "Khác": [
-        "Doanh nghiệp xã hội",
-        "Nghiên cứu khách hàng",
-        "Tư vấn việc làm",
-        "Báo chí truyền thông"
-    ]
+    "Phân tích dữ liệu": [],
+    "Hệ thống thông tin": [],
+    "Mạng máy tính": [],
+    "An toàn thông tin": {
+      "An toàn hệ thống": [],
+      "An toàn ứng dụng": [],
+      "An ninh mạng": []
+    }
+  },
+
+  "Đổi mới sáng tạo": {
+    "Khởi nghiệp sáng tạo": [],
+    "Phân tích mô hình kinh doanh": [],
+    "Đổi mới sáng tạo và khởi nghiệp": [],
+    "Khởi nghiệp đổi mới sáng tạo tác động xã hội": []
+  },
+  "Sinh học và môi trường": [
+    "Sinh hóa học",
+    "Sinh thái học",
+    "Sinh học tế bào",
+    "Di truyền học",
+    "Hệ sinh thái và quản lý đa dạng sinh học",
+    "Quản lý chất thải và tái chế",
+    "Năng lượng bền vững và hiệu quả năng lượng",
+    "Biến đổi khí hậu và ứng phó với biến đổi khí hậu",
+    "Quản lý tài nguyên nước",
+    "Khoa học đất và quản lý đất",
+    "Công nghệ sinh học",
+    "Sinh học biển",
+    "Sinh lý học",
+    "Vi sinh vật học",
+    "Độc học môi trường",
+    "Quản lý tài nguyên thiên nhiên",
+    "Nuôi trồng thủy hải sản",
+    "Nông nghiệp",
+    "Công nghệ sinh học"
+  ],
+  "Hóa học": [
+    "Hóa hữu cơ",
+    "Hóa vô cơ",
+    "Hóa phân tích",
+    "Hóa lý",
+    "Hóa học vật liệu",
+    "Hóa sinh",
+    "Công nghệ hóa học",
+    "Hóa dầu",
+    "Hóa dược",
+    "Hóa môi trường",
+    "Hóa mỹ phẩm"
+  ],
+  "Quản trị - Quản lý": [
+    "Quản trị doanh nghiệp",
+    "Quản trị rủi ro",
+    "Quản trị nhân sự",
+    "Quản trị chiến lược",
+    "Quản trị sản xuất",
+    "Quản trị chất lượng",
+    "Quản trị dự án",
+    "Quản trị thương hiệu",
+    "Quản trị tài chính",
+    "Quản trị marketing",
+    "Quản trị vận hành",
+    "Khoa học quản lý",
+    "Quản lý công",
+    "Quản trị nhân lực",
+    "Quản trị văn phòng",
+    "Hệ thống thông tin quản lý",
+    "Quan hệ lao động"
+  ],
+  "Công nghệ thực phẩm": {
+    "Phát triển sản phẩm": [],
+    "Phân tích thực phẩm": ["Công nghệ thực phẩm", "Kỹ thuật thực phẩm"],
+    "Công nghệ sau thu hoạch": [],
+    "Công nghệ chế biến thực phẩm": [],
+    "Công nghệ sinh học thực phẩm": [],
+    "Hoá sinh học thực phẩm": [],
+    "Vi sinh vật học thực phẩm": [],
+    "Dinh dưỡng": [],
+    "An toàn thực phẩm": [],
+    "Quản lý chất lượng": [],
+    "Thiết kế công nghệ và nhà máy thực phẩm": [],
+    "Quản lý chuỗi cung ứng và truy nguyên nguồn gốc thực phẩm": [],
+    "Thực phẩm chức năng": [],
+    "Quản trị nhà hàng và dịch vụ ăn uống": []
+  },
+  "Du lịch và ẩm thực": [
+    "Văn hóa du lịch",
+    "Du lịch ẩm thực",
+    "Quản lý nhà hàng và khách sạn",
+    "Marketing du lịch và ẩm thực",
+    "Quản lý sự kiện",
+    "Quản lý lữ hành",
+    "Hướng dẫn viên du lịch",
+    "Quản lý dịch vụ ăn uống",
+    "Quản lý resort",
+    "Du lịch bền vững",
+    "Phát triển du lịch địa phương",
+    "Nghiên cứu ẩm thực",
+    "Quản lý du lịch quốc tế",
+    "Quản trị nhà hàng và dịch vụ ăn uống",
+    "Quản trị kinh doanh thực phẩm"
+  ],
+  "Lý luận chính trị": ["Trung cấp lý luận chính trị", "Lý luận chính trị"],
+  "Công nghệ": [
+    "Kỹ thuật thực phẩm",
+    "Hóa học",
+    "Công nghệ sinh học ứng dụng",
+    "Công nghệ thông tin",
+    "Công nghệ thực phẩm",
+    "Khoa học thực phẩm",
+    "Công nghệ chế biến sản phẩm thủy sản",
+    "Công nghệ Hữu cơ",
+    "Hoá mỹ phẩm"
+  ],
+  "Khác": [
+    "Doanh nghiệp xã hội",
+    "Nghiên cứu khách hàng",
+    "Tư vấn việc làm",
+    "Báo chí truyền thông"
+  ]
 }

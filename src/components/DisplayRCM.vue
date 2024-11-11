@@ -120,26 +120,26 @@ export default {
       showNoMentorMessage: false,
       isLoading: false,
       particlesOptions: {
-particlesOptions: {
-  particles: {
-    number: {
-      value: 100, // Số lượng hạt
-    },
-    shape: {
-      type: "circle", // Hình dạng của hạt
-    },
-    size: {
-      value: 4, // Kích thước của hạt
-    },
-    color: {
-      value: "#ff0000", // Màu của hạt
-    },
-    move: {
-      enable: true, // Cho phép di chuyển
-      speed: 2, // Tốc độ di chuyển
-    },
-  },
-},
+        particlesOptions: {
+          particles: {
+            number: {
+              value: 100, // Số lượng hạt
+            },
+            shape: {
+              type: "circle", // Hình dạng của hạt
+            },
+            size: {
+              value: 4, // Kích thước của hạt
+            },
+            color: {
+              value: "#ff0000", // Màu của hạt
+            },
+            move: {
+              enable: true, // Cho phép di chuyển
+              speed: 2, // Tốc độ di chuyển
+            },
+          },
+        },
       },
     };
   },
