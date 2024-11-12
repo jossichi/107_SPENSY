@@ -18,14 +18,22 @@
 
         <div class="input-box mb-4">
           <label for="specialization" class="block">Chuyên ngành</label>
-          <input
+          <select
             v-model="specialization"
             id="specialization"
-            type="text"
-            placeholder="Nhập chuyên ngành"
             required
             class="w-full p-2 border border-gray-300 rounded"
-          />
+          >
+            <option value="" disabled selected>Chọn chuyên ngành</option>
+            <!-- Dynamically populate options here -->
+            <option
+              v-for="option in specializationOptions"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
         </div>
 
         <div class="input-group mb-4 flex justify-between gr-contact">
@@ -141,10 +149,51 @@ export default {
           },
         },
       },
+      specializationOptions: [], // This will hold the list of specializations from Kary tree
     };
   },
 
+  mounted() {
+    // Fetch the Kary Tree data when the component is mounted
+    this.fetchKaryTreeData();
+  },
+
   methods: {
+    async fetchKaryTreeData() {
+      this.isLoading = true;
+
+      try {
+        const response = await fetch("http://localhost:5000/api/kary_tree");
+        if (!response.ok) {
+          throw new Error("Failed to fetch Kary tree data");
+        }
+        const karyTree = await response.json();
+        this.specializationOptions = this.flattenKaryTree(karyTree); // Flatten the tree structure
+      } catch (error) {
+        console.error("Error fetching Kary tree:", error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // Method to flatten the Kary tree into a list of specializations
+    flattenKaryTree(karyTree) {
+      let flatList = [];
+
+      // Recursive function to traverse the Kary tree
+      function traverse(node) {
+        if (node) {
+          flatList.push(node.name); // Push the current node name (specialization)
+          if (node.children) {
+            node.children.forEach((child) => traverse(child)); // Recursively process child nodes
+          }
+        }
+      }
+
+      traverse(karyTree); // Start traversing from the root
+      return flatList;
+    },
+
     async findMentors() {
       console.log("Thông tin tìm kiếm Mentor:", {
         fullName: this.fullName,
@@ -175,10 +224,10 @@ export default {
         }
 
         const data = await response.json();
-        this.mentors = data || [];
+        this.mentors = data || []; // Gán dữ liệu nhận được vào danh sách mentor
 
         if (this.mentors.length === 0) {
-          this.showNoMentorMessage = true;
+          this.showNoMentorMessage = true; // Hiển thị thông báo không có mentor nếu danh sách rỗng
         }
       } catch (error) {
         console.error("There was a problem with the fetch operation:", error);
@@ -189,8 +238,8 @@ export default {
     },
 
     async handleSubmit() {
-      this.mentors = []; // Clear previous search results
-      await this.findMentors();
+      this.mentors = []; // Xóa danh sách mentor cũ
+      await this.findMentors(); // Tìm mentor mới dựa trên các tiêu chí đã nhập
     },
   },
 };
