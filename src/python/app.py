@@ -3,7 +3,8 @@ import json
 import pandas as pd
 import os
 from flask_cors import CORS
-
+from openpyxl import load_workbook
+import requests
 app = Flask(__name__)
 # CORS(app)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -150,7 +151,7 @@ def match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree):
     return matches
 
 # Endpoint API để trả về danh sách matches
-@app.route('/api/matches', methods=['GET'])
+@app.route('/matches', methods=['GET'])
 def get_matches():
     matches = match_mentor_mentee_kary_using_data(df_mentor, df_mentee, tree)
     serialized_matches = []
@@ -164,16 +165,7 @@ def get_matches():
     return jsonify(serialized_matches)
 
 def preprocess_user_data(user_data, reference_df):
-    """
-    Chuẩn hóa dữ liệu người dùng giống như df_mentee.
-    
-    Args:
-        user_data (dict): Thông tin người dùng từ request.
-        reference_df (DataFrame): DataFrame tham chiếu (vd: df_mentor hoặc df_mentee) để đảm bảo khớp cột.
-        
-    Returns:
-        DataFrame: DataFrame đã chuẩn hóa và khớp cột với reference_df.
-    """
+
     try:
         # Tạo DataFrame từ dữ liệu người dùng
         user_df = pd.DataFrame([{
@@ -197,6 +189,59 @@ def preprocess_user_data(user_data, reference_df):
         raise ValueError(f"Lỗi khi chuẩn hóa dữ liệu người dùng: {e}")
 
 
+def check_user_in_mentees(user_full_name):
+    """ Kiểm tra xem người dùng có trong sheet Mentee và API /matches không """
+    try:
+        # Đọc dữ liệu từ file Excel
+        file_path = r'src\python\IDP_DATA_MENTEE.xlsx'
+        mentee_df = pd.read_excel(file_path, sheet_name='Mentee', engine='openpyxl')
+
+        # Tìm kiếm người dùng theo tên (làm sạch khoảng trắng)
+        matched_user = mentee_df[mentee_df['Họ tên'].str.strip() == user_full_name.strip()]
+
+        # In ra kết quả để debug
+        print(f"Tìm thấy người dùng {user_full_name.strip()} trong sheet Mentee? {'Có' if not matched_user.empty else 'Không'}")
+
+        # Kết quả từ sheet Mentee
+        if not matched_user.empty:
+            # Nếu tìm thấy người dùng, lấy thông tin Mentor và Chuyên môn
+            mentor = matched_user.iloc[0]['Chức vụ']  # Giả sử cột 'Chức vụ' chứa thông tin Mentor
+            specialty = matched_user.iloc[0]['Chuyên Môn']  # Giả sử cột 'Chuyên Môn' chứa thông tin Chuyên môn
+            print(f"Thông tin từ sheet Mentee: Mentor = {mentor}, Specialty = {specialty}")
+            mentee_info = {"mentor": mentor, "specialty": specialty}
+        else:
+            mentee_info = None
+            print("Không tìm thấy người dùng trong sheet Mentee.")
+
+        # Kiểm tra thông tin người dùng trong API /matches
+        try:
+            # Gửi yêu cầu GET đến API /matches
+            response = requests.get('http://localhost:5000/matches')
+            if response.status_code == 200:
+                matches = response.json()
+
+                # Tìm trong danh sách matches để tìm người dùng
+                for match in matches:
+                    if match['mentee'] == user_full_name.strip():
+                        print(f"Thông tin từ API /matches: {match}")
+                        return {"mentor": match['mentor'], "specialty": match['mentor_specialty']}
+                
+                # Nếu không tìm thấy người dùng trong matches
+                print(f"Không tìm thấy người dùng {user_full_name} trong API /matches.")
+                return mentee_info
+
+            else:
+                print("Không thể lấy thông tin từ /matches, status code:", response.status_code)
+                return mentee_info
+
+        except Exception as e:
+            print(f"Lỗi khi gửi yêu cầu đến API /matches: {e}")
+            return mentee_info
+
+    except Exception as e:
+        print(f"Lỗi khi kiểm tra người dùng trong sheet Mentee: {e}")
+        return None
+
 @app.route('/api/find_mentors', methods=['POST'])
 def find_mentors():
     try:
@@ -207,25 +252,78 @@ def find_mentors():
         # Chuẩn hóa dữ liệu người dùng
         user_df = preprocess_user_data(user_data, df_mentor)
 
-        print("DataFrame của người dùng đã chuẩn hóa:")
-        print(user_df.head())
+        user_df = user_df.reindex(columns=df_mentee.columns, fill_value=0)
 
-        # Thực hiện ghép cặp mentor dựa trên dữ liệu chuẩn hóa
+        # Lưu dữ liệu người dùng vào Excel
+        save_user_data_to_excel(user_data)
+
+        # Kiểm tra người dùng có trong sheet Mentee không
+        user_full_name = user_data.get('fullName', '').strip()
+        match_info = check_user_in_mentees(user_full_name)
+
+        # Lấy thông tin chuyên môn của người dùng
         user_specialty = user_data.get('specialization', '').strip()
-        user_gender = 1 if user_data.get('gender', '').lower() == 'female' else 0
 
+        # Lấy chuyên môn phụ nếu có
+        related_specialties = get_subcategories(tree.root, user_specialty)  # Lấy cả chuyên môn phụ
+        user_df = user_df.apply(lambda col: 1 if col.name in related_specialties else col)
+
+        gender_value = user_data.get('gender', '').strip().lower()
+        if gender_value in ['female', 'woman', 'f']:
+            user_gender = 1
+        else:
+            user_gender = 0
+
+
+        # Ghép cặp mentor - mentee từ cơ sở dữ liệu (có thể dùng thêm logic này)
         matched_mentors = match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree)
+
+        # Kiểm tra sự ghép cặp mentor qua API /matches
+        try:
+            # Gửi yêu cầu đến endpoint /matches để lấy tất cả các cặp mentor-mentee
+            response = requests.get('http://localhost:5000/matches')
+            if response.status_code == 200:
+                matches = response.json()
+                # Duyệt qua tất cả các kết quả và kiểm tra nếu người dùng (mentee) có trong đó
+                match_found = False
+                for match in matches:
+                    if match['mentee'] == user_full_name and match['mentee_specialty'] == user_specialty:
+                        matched_mentors.append({
+                            "mentor": match['mentor'],
+                            "mentee": match['mentee'],
+                            "mentor_specialty": match['mentor_specialty'],
+                            "mentee_specialty": match['mentee_specialty'],
+                            "message": f"{user_full_name} đã được ghép với mentor {match['mentor']} chuyên môn {match['mentor_specialty']}"
+                        })
+                        match_found = True
+                        break  # Dừng duyệt nếu đã tìm thấy
+
+                if not match_found:
+                    matched_mentors.append({
+                        "match_found": False,
+                        "message": f"Không tìm thấy cặp mentor-mentee cho {user_full_name} trong hệ thống."
+                    })
+            else:
+                print("Không thể lấy thông tin từ /matches, status code:", response.status_code)
+
+        except Exception as e:
+            print(f"Lỗi khi gửi yêu cầu đến /matches: {e}")
+
+        # Nếu người dùng không tìm thấy trong hệ thống Mentee, cũng trả thông báo
+        if not match_info:
+            matched_mentors.append({
+                "match_found": False,
+                "message": "Không tìm thấy thông tin người dùng trong hệ thống Mentee."
+            })
 
         return jsonify({
             "matches": matched_mentors,
             "message": "Tìm mentor thành công!"
         }), 200
+
     except Exception as e:
         print(f"Đã xảy ra lỗi: {e}")
         return jsonify({"error": str(e)}), 500
-
-print(df_mentee.head())
-# print(user_df.head())
 
 if __name__ == '__main__':
     app.run(debug=True)
