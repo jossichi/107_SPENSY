@@ -189,6 +189,44 @@ def preprocess_user_data(user_data, reference_df):
         raise ValueError(f"Lỗi khi chuẩn hóa dữ liệu người dùng: {e}")
 
 
+def save_user_data_to_excel(user_data):
+    try:
+        # Đường dẫn đến file Excel
+        file_path = r'src\python\IDP_DATA_MENTEE.xlsx'
+
+        # Đọc dữ liệu hiện tại từ file Excel
+        try:
+            mentee_df = pd.read_excel(file_path, sheet_name='Mentee', engine='openpyxl')
+        except FileNotFoundError:
+            mentee_df = pd.DataFrame(columns=["Họ tên", "Giới tính", "Chuyên môn", "Chức vụ"])
+
+        # Lấy giá trị giới tính từ user_data và xử lý chính xác
+        gender = user_data.get('gender', '').lower()
+        if gender == 'female' or gender == 'nữ':
+            gender_label = 'Nữ'
+        else:
+            gender_label = 'Nam'
+
+        # Chuyển dữ liệu người dùng thành một dòng DataFrame
+        new_row = pd.DataFrame([{
+            "Họ tên": user_data.get('fullName', ''),
+            "Giới tính": gender_label,
+            "Chuyên Môn": user_data.get('specialization', '').capitalize(),
+            "Chức vụ": "Mentee"
+        }])
+
+        # Thêm dữ liệu vào DataFrame
+        mentee_df = pd.concat([mentee_df, new_row], ignore_index=True)
+
+        # Ghi lại vào file Excel
+        with pd.ExcelWriter(file_path, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
+            mentee_df.to_excel(writer, sheet_name='Mentee', index=False)
+
+        print("Lưu dữ liệu người dùng thành công.")
+    except Exception as e:
+        print(f"Lỗi khi lưu dữ liệu vào Excel: {e}")
+        raise e
+
 def check_user_in_mentees(user_full_name):
     """ Kiểm tra xem người dùng có trong sheet Mentee và API /matches không """
     try:
@@ -241,7 +279,6 @@ def check_user_in_mentees(user_full_name):
     except Exception as e:
         print(f"Lỗi khi kiểm tra người dùng trong sheet Mentee: {e}")
         return None
-
 @app.route('/api/find_mentors', methods=['POST'])
 def find_mentors():
     try:
@@ -324,6 +361,7 @@ def find_mentors():
     except Exception as e:
         print(f"Đã xảy ra lỗi: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
