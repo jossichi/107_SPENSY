@@ -147,6 +147,7 @@ def match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree):
             matches.append((mentor["Họ tên"], mentor_specialty))
 
     return matches
+
 class Node:
     def __init__(self, mentor, mentee, mentor_specialty, mentee_specialty):
         self.mentor = mentor
@@ -377,38 +378,39 @@ def find_mentors():
 
         # Lưu dữ liệu người dùng vào Excel
         save_user_data_to_excel(user_data)
+        print("Lưu dữ liệu người dùng thành công. Dữ liệu Excel đã được reload thành công.")
 
-        # Kiểm tra người dùng có trong sheet Mentee không
+        # Kiểm tra người dùng trong sheet Mentee
         user_full_name = user_data.get('fullName', '').strip()
         match_info = check_user_in_mentees(user_full_name)
+        if match_info:
+            print(f"Tìm thấy người dùng {user_full_name} trong sheet Mentee? Có")
 
         # Lấy thông tin chuyên môn của người dùng
         user_specialty = user_data.get('specialization', '').strip()
 
-        # Lấy chuyên môn phụ nếu có
-        related_specialties = get_subcategories(tree.root, user_specialty)  # Lấy cả chuyên môn phụ
+        # Tìm chuyên môn phụ
+        related_specialties = get_subcategories(tree.root, user_specialty)
         user_df = user_df.apply(lambda col: 1 if col.name in related_specialties else col)
 
         gender_value = user_data.get('gender', '').strip().lower()
         user_gender = 1 if gender_value in ['female', 'woman', 'f'] else 0
 
-        # Ghép cặp mentor - mentee từ cơ sở dữ liệu (có thể dùng thêm logic này)
+        # Ghép cặp mentor - mentee
         matched_mentors = match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree)
 
-        # Create an instance of LinkedList and populate it with match results
+        # Tạo LinkedList
         linked_list = LinkedList()
         for mentor, mentee, mentor_spec, mentee_spec in matched_mentors:
             linked_list.append(mentor, mentee, mentor_spec, mentee_spec)
 
-        # Display the linked list (for debugging or verification)
         linked_list.display()
 
-        # Find matches in the linked list
+        # Kiểm tra LinkedList với người dùng
         filtered_matches = []
         match_count = 0
-
-        # Iterate through the linked list and count matches for user_full_name
         current = linked_list.head
+
         while current:
             if current.mentee.strip() == user_full_name.strip():
                 filtered_matches.append({
@@ -420,59 +422,47 @@ def find_mentors():
                 match_count += 1
             current = current.next
 
-        # If no matches are found in the linked list, append a message
         if not filtered_matches:
             filtered_matches.append({
                 "message": f"Không tìm thấy người dùng {user_full_name} trong danh sách mentor-mentee."
             })
-        
-        # After counting matches in the linked list, check if any matches are found
-        if match_count > 0:
-            matched_mentors.append({
-                "match_found": True,
-                "message": f"Đã tìm thấy sự tồn tại mentee {user_full_name} trong linked list. Số lần xuất hiện: {match_count}"
-            })
-            print(f"Đã tìm thấy sự tồn tại mentee {user_full_name} trong linked list. Số lần xuất hiện: {match_count}")
-        else:
-            matched_mentors.append({
-                "match_found": False,
-                "message": f"Không tìm thấy {user_full_name} trong linked list."
-            })
-            print(f"Không tồn tại {user_full_name} trong linked list.")
 
-        # Check if the user exists in the API /matches (optional)
+        print(f"Không tồn tại {user_full_name} trong linked list.")
+
+        # Kiểm tra tồn tại trong API
+        print(f"Đang kiểm tra sự tồn tại của {user_full_name} trong API /matches...")
         try:
             response = requests.get('http://localhost:5000/matches')
             if response.status_code == 200:
                 matches = response.json()
 
-                # Check if user is found in the /matches API response
-                api_match_count = sum(1 for match in matches if match['mentee'] == user_full_name and match['mentee_specialty'] == user_specialty)
-                
-                if api_match_count > 0:
-                    matched_mentors.append({
-                        "api_match_found": True,
-                        "message": f"Đã tìm thấy sự tồn tại mentee {user_full_name} trong API. Số lần xuất hiện: {api_match_count}"
-                    })
-                    print(f"Đã tìm thấy sự tồn tại mentee {user_full_name} trong API với số lần xuất hiện: {api_match_count}")
+                # Kiểm tra sự tồn tại của user_full_name trong kết quả API
+                user_matches = [
+                    match for match in matches
+                    if match['mentee'].strip().lower() == user_full_name.strip().lower() and 
+                    match['mentee_specialty'].strip().lower() == user_specialty.strip().lower()
+                ]
+
+                if user_matches:
+                    print(f"Đã tìm thấy mentee {user_full_name} trong API /matches.")
+                    return jsonify({
+                        "message": f"Tìm thấy {len(user_matches)} kết quả cho {user_full_name} trong API.",
+                        "matches": user_matches
+                    }), 200
                 else:
-                    print("Không tìm thấy trong API")
+                    print(f"Không tìm thấy mentee {user_full_name} trong API /matches.")
+                    return jsonify({
+                        "message": f"Không tìm thấy {user_full_name} trong API."
+                    }), 404
             else:
                 print(f"Không thể lấy thông tin từ /matches, status code: {response.status_code}")
+                return jsonify({
+                    "error": f"Không thể truy cập API /matches, status code: {response.status_code}"
+                }), 500
+
         except Exception as e:
             print(f"Lỗi khi gửi yêu cầu đến /matches: {e}")
-
-        # If user does not exist in Mentee system, add that to the response
-        if not match_info:
-            matched_mentors.append({
-                "match_found": False,
-                "message": "Không tìm thấy thông tin người dùng trong hệ thống Mentee."
-            })
-
-        return jsonify({
-            "matches": filtered_matches,  # Return filtered matches from the linked list
-            "message": "Tìm mentor thành công!"
-        }), 200
+            return jsonify({"error": f"Lỗi khi gọi API: {str(e)}"}), 500
 
     except Exception as e:
         print(f"Đã xảy ra lỗi: {e}")
