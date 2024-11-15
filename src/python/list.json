@@ -2,7 +2,8 @@
   "Kinh tế": {
     "Quản trị kinh doanh": {
       "Sales": [],
-      "Management": []
+      "Management": [],
+      "Kinh doanh quốc tế": []
     },
     "Kinh tế học": [],
     "Tài chính": {
@@ -14,7 +15,18 @@
       },
       "Công nghệ tài chính": []
     },
-    "Ngân hàng": [],
+    "Ngân hàng": [
+    "Tín dụng ngân hàng",
+    "Đầu tư ngân hàng",
+    "Tài chính ngân hàng",
+    "Quản lý tài chính ngân hàng",
+    "Ngân hàng đầu tư",
+    "Ngân hàng thương mại",
+    "Quản lý rủi ro ngân hàng",
+    "Phân tích tín dụng",
+    "Ngân hàng số",
+    "Dịch vụ ngân hàng điện tử"
+  ],
     "Marketing": {
       "Content creator": [],
       "SEO": []

@@ -5,7 +5,7 @@ import os
 from flask_cors import CORS
 import requests
 app = Flask(__name__)
-
+# CORS(app)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 @app.after_request
 def after_request(response):
@@ -14,17 +14,23 @@ def after_request(response):
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
     return response
 
+# Đường dẫn hiện tại của file script
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 excel_file_path = os.path.join(r'src/python/IDP_DATA_MENTEE.xlsx')
+
+# Print the constructed file path to verify
+print(f"Excel file path: {excel_file_path}")
 
 excel_file = pd.ExcelFile(excel_file_path)
 df_mentor = pd.read_excel(excel_file, sheet_name='Mentor')
 df_mentee = pd.read_excel(excel_file, sheet_name='Mentee')
 
+# Chuyển đổi cột 'Giới tính' thành số nguyên (1 cho 'Nữ', 0 cho 'Nam')
 df_mentor['Giới tính'] = df_mentor['Giới tính'].apply(lambda x: 1 if x == "Nữ" else 0)
 df_mentee['Giới tính'] = df_mentee['Giới tính'].apply(lambda x: 1 if x == "Nữ" else 0)
 
+# Tạo các cột giả định cho các giá trị trong 'Chuyên Môn' và đảm bảo tất cả các cột đều có trong cả mentor và mentee
 df_mentor = pd.get_dummies(df_mentor, columns=["Chuyên Môn"])
 df_mentee = pd.get_dummies(df_mentee, columns=["Chuyên Môn"])
 
@@ -34,15 +40,13 @@ df_mentor = df_mentor.reindex(columns=all_columns, fill_value=0)
 df_mentee = df_mentee.reindex(columns=all_columns, fill_value=0)
 
 class KaryTreeNode:
-    def __init__(self, value, children=None):
+    def __init__(self, value, depth=0):
         self.value = value
-        self.children = children if children else []
-        self.parent = None  # Initialize parent to None
+        self.children = []
+        self.depth = depth
 
     def add_child(self, node):
         self.children.append(node)
-        node.parent = self  
-
 
 # Định nghĩa lớp cây k-ary
 class KaryTree:
@@ -50,28 +54,39 @@ class KaryTree:
         self.root = None
 
     def build_tree(self, data):
-        self.root = KaryTreeNode("Cây chuyên môn")
+        self.root = KaryTreeNode("Cây chuyên môn", 0)
         self._build_tree_recursive(self.root, data)
         
-    def _build_tree_recursive(self, node, data):
+    def _build_tree_recursive(self, node, data, depth=1):
         for key, value in data.items():
-            child_node = KaryTreeNode(key)
-            node.add_child(child_node)  
+            child_node = KaryTreeNode(key, depth)
+            node.add_child(child_node)
             if isinstance(value, dict):
-                self._build_tree_recursive(child_node, value)
+                self._build_tree_recursive(child_node, value, depth + 1)
             elif isinstance(value, list):
                 for item in value:
                     if isinstance(item, dict):
-                        self._build_tree_recursive(child_node, item)
+                        self._build_tree_recursive(child_node, item, depth + 1)
                     else:
-                        child_node.add_child(KaryTreeNode(item))
+                        child_node.add_child(KaryTreeNode(item, depth + 1))
 
     def print_tree(self, node=None, level=0):
         if node is None:
             node = self.root
-        print(" " * level * 2 + node.value )
+        # In giá trị của nút cùng với độ sâu
+        print(" " * level * 2 + f"{node.value} (Độ sâu: {node.depth})")
         for child in node.children:
             self.print_tree(child, level + 1)
+    
+    def get_max_depth(self, node=None):
+        if node is None:
+            node = self.root
+        # Nếu nút không có con, độ sâu là chính nó
+        if not node.children:
+            return node.depth
+        # Tính độ sâu tối đa từ các con
+        child_depths = [self.get_max_depth(child) for child in node.children]
+        return max(child_depths)
 
 # Đọc dữ liệu từ file JSON để xây dựng cây k-ary
 json_file_path = os.path.join(r'src/python/list.json')
@@ -86,6 +101,7 @@ with open(json_file_path, 'r', encoding='utf-8') as file:
 tree = KaryTree()
 tree.build_tree(data)
 
+# Hàm lấy danh sách con chuyên mục từ cây k-ary
 def get_subcategories(tree_node, category):
     if tree_node.value == category:
         return [child.value for child in tree_node.children]
@@ -95,50 +111,40 @@ def get_subcategories(tree_node, category):
             return subcategories
     return []
 
-def get_related_specialties(tree_node, category, related_specialties=None):
-    if related_specialties is None:
-        related_specialties = set()
-
-    # Thêm chuyên môn của node vào set
-    related_specialties.add(category)
-
-    # Duyệt qua các con của node và thêm vào set nếu chúng là chuyên môn con
-    for child in tree_node.children:
-        if child.value == category:
-            # Khi tìm thấy chuyên môn, đi lên và tìm cha để thêm vào
-            find_parents(child, related_specialties)
-        elif isinstance(child, KaryTreeNode):
-            # Tìm các chuyên môn liên quan của con
-            get_related_specialties(child, category, related_specialties)
-
-    return list(related_specialties)
-
-def find_parents(tree_node, related_specialties):
-    # Duyệt lên các cha để lấy tất cả các chuyên môn cha
-    while tree_node:
-        related_specialties.add(tree_node.value)
-        if not tree_node.parent:
-            break
-        tree_node = tree_node.parent
-
 def match_mentor_mentee_kary_using_data(df_mentor, df_mentee, tree):
     matches = []
     
-    for _, mentor in df_mentor.iterrows():
-        # Get mentor's specialty and gender
-        mentor_specialty = mentor.filter(like="Chuyên Môn_").idxmax().replace("Chuyên Môn_", "")
-        mentor_subcategories = get_related_specialties(tree.root, mentor_specialty)  # Get all related specialties (including parent and child)
-        mentor_gender = mentor["Giới tính"]
+    # Hàm đệ quy để duyệt cây và so khớp mentor-mentee
+    def match_node(node):
+        if not node.children:
+            return
         
-        for _, mentee in df_mentee.iterrows():
-            # Get mentee's specialty and gender
-            mentee_specialty = mentee.filter(like="Chuyên Môn_").idxmax().replace("Chuyên Môn_", "")
-            mentee_gender = mentee["Giới tính"]
-            
-            # Match based on specialty and gender (allow mentee's specialty to match any related specialties)
-            if mentee_specialty in mentor_subcategories and mentee_gender == mentor_gender:
-                matches.append((mentor["Họ tên"], mentee["Họ tên"], mentor_specialty, mentee_specialty))
-    
+        for child in node.children:
+            if isinstance(child.value, str):  # Chỉ tìm kiếm trong các node chuyên môn
+                for _, mentor in df_mentor.iterrows():
+                    mentor_specialty = mentor.filter(like="Chuyên Môn_").idxmax().replace("Chuyên Môn_", "")
+                    mentor_subcategories = get_subcategories(tree.root, mentor_specialty)
+                    mentor_subcategories.append(mentor_specialty)
+                    mentor_gender = mentor["Giới tính"]
+
+                    for _, mentee in df_mentee.iterrows():
+                        mentee_specialty = mentee.filter(like="Chuyên Môn_").idxmax().replace("Chuyên Môn_", "")
+                        mentee_gender = mentee["Giới tính"]
+
+                        # So khớp dựa trên chuyên môn và giới tính
+                        if mentee_specialty in mentor_subcategories and mentee_gender == mentor_gender:
+                            # Sử dụng độ sâu đã có từ cây
+                            mentor_depth = node.depth
+                            mentee_depth = child.depth
+
+                            if mentor_depth < mentee_depth:  # Mentor's depth must be smaller (closer to root)
+                                matches.append((mentor["Họ tên"], mentee["Họ tên"], mentor_specialty, mentee_specialty))
+            # Tiếp tục duyệt cây mà không cần phải gọi DFS lại
+            match_node(child)
+
+    # Bắt đầu từ root node
+    match_node(tree.root)
+
     return matches
 
 def match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree):
@@ -149,8 +155,8 @@ def match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree):
         raise ValueError("Chuyên môn của người dùng không được để trống.")
     
     # Lọc danh sách mentor
-    user_subcategories = get_related_specialties(tree.root, user_specialty)  # Get all related specialties
-    user_subcategories.append(user_specialty.lower())  # Include the user's specialty in lowercase
+    user_subcategories = get_subcategories(tree.root, user_specialty)
+    user_subcategories.append(user_specialty)
 
     # Chuẩn hóa đầu vào của user (chuyển thành chữ thường)
     user_specialty = user_specialty.lower().strip()
