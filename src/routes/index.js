@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import DisplayRCM from "../components/DisplayRCM.vue";
 import MasterPage from "@/components/MasterPage.vue";
 // import App from '@/App.vue';
-// import thêm các components khác nếu có
+import CommentsSystem from "../components/CommentsSystem.vue"
 
 const routes = [
   {
@@ -15,7 +15,10 @@ const routes = [
     path: "/rcm",
     component: DisplayRCM,
   },
-  // Thêm các route khác nếu có
+  {
+    path: "/cmt",
+    component: CommentsSystem,
+  },
 ];
 
 const router = createRouter({

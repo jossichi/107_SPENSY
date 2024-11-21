@@ -25,6 +25,20 @@
         </svg>
         <span>Recomments mentor-mentee</span>
       </router-link>
+
+      <router-link to="/cmt" class="navbar__link">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+        >
+          <path
+            d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 4.66l4 2v5.68l-4 2-4-2V8.66l4-2zm0 0l4 2V7l-4-2-4 2v1.66l4-2z"
+          />
+        </svg>
+        <span>Classifications Comments System</span>
+      </router-link>
     </nav>
     <router-view />
   </div>
