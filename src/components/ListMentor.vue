@@ -9,23 +9,23 @@
     </header>
 
     <div class="leaderboard__profiles">
+      <!-- Hiển thị nếu có mentor -->
       <div v-if="mentors.length > 0">
         <ul class="mentor-list">
           <li
-            v-for="mentor in mentors"
-            :key="mentor.mentor"
+            v-for="(mentor, index) in mentors"
+            :key="index"
             class="mentor-item"
           >
             <div class="mentor-profile">
               <span><strong>Mentor:</strong> {{ mentor.mentor }}</span>
-              <span
-                ><strong>Chuyên môn:</strong>
-                {{ mentor.mentor_specialty }}</span
-              >
+              <span><strong>Chuyên môn:</strong> {{ mentor.mentor_specialty }}</span>
             </div>
           </li>
         </ul>
       </div>
+
+      <!-- Hiển thị thông báo nếu không có mentor -->
       <p v-else class="text-red-500">Hiện mentor phù hợp với bạn chưa có</p>
     </div>
   </div>
@@ -36,19 +36,12 @@ export default {
   props: {
     mentors: {
       type: Array,
-      required: true,
+      required: true, // Đảm bảo mentors luôn là một mảng
     },
-  },
-  mounted() {
-    const mentorItems = document.querySelectorAll(".mentor-item");
-    mentorItems.forEach((item, index) => {
-      const delay = index / 4 + "s";
-      item.style.animationDelay = delay;
-      item.style.visibility = "visible"; // Hiển thị sau khi load
-    });
   },
 };
 </script>
+
 
 <style scoped>
 html,

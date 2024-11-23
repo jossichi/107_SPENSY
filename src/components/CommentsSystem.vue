@@ -71,7 +71,7 @@ export default {
 
         // Send comment to Python backend
         axios
-            .post("http://127.0.0.1:3000/add_comment", { text: this.newComment })  // Only send text
+            .post("http://127.0.0.1:5000/add_comment", { text: this.newComment })  // Only send text
             .then((response) => {
                 const { translated_text, prediction, translation_time, classification_time } = response.data;
 

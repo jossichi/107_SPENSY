@@ -32,8 +32,7 @@
           <div class="input-box mb-4 w-1/2">
             <label for="email" class="block">Email</label>
             <input
-              v-model="email"
-              type="email"
+              type="text"
               placeholder="Nhập email"
               required
               class="w-full p-2 border border-gray-300 rounded"
@@ -42,7 +41,6 @@
           <div class="input-box mb-4 w-1/2">
             <label for="phone" class="block">Số điện thoại</label>
             <input
-              v-model="phone"
               type="text"
               placeholder="Nhập số điện thoại"
               required
@@ -89,84 +87,112 @@
       <p v-if="isLoading" class="text-blue-500">
         Đang tìm mentor phù hợp với bạn, vui lòng chờ đợi...
       </p>
-
-      <!-- Hiển thị số lần tên người dùng xuất hiện -->
-      <p v-if="userCount > 0" class="text-green-500">
-        Tên người dùng đã xuất hiện {{ userCount }} lần trong hệ thống.
-      </p>
     </div>
 
     <!-- Phần danh sách Mentor -->
     <div class="right w-1/2 p-4">
       <ListMentor :mentors="mentors" />
     </div>
+
+    <Particles id="particles-js" class="particles" :params="particlesOptions" />
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-import ListMentor from './ListMentor.vue';
+// Import ListMentor component
+import ListMentor from "./ListMentor.vue";
+import Particles from "vue-particles";
 
 export default {
+  components: {
+    ListMentor,
+    Particles,
+  },
   data() {
     return {
-      fullName: '',
-      specialization: '',
-      email: '',
-      phone: '',
-      gender: '',
+      fullName: "",
+      specialization: "",
+      gender: [],
+      mentors: [], // Mảng để chứa dữ liệu mentor
+      showNoMentorMessage: false,
       isLoading: false,
-      mentors: [],
-      userCount: 0, // Thêm một biến để lưu số lần xuất hiện của tên người dùng
+      particlesOptions: {
+        particlesOptions: {
+          particles: {
+            number: {
+              value: 100, // Số lượng hạt
+            },
+            shape: {
+              type: "circle", // Hình dạng của hạt
+            },
+            size: {
+              value: 4, // Kích thước của hạt
+            },
+            color: {
+              value: "#ff0000", // Màu của hạt
+            },
+            move: {
+              enable: true, // Cho phép di chuyển
+              speed: 2, // Tốc độ di chuyển
+            },
+          },
+        },
+      },
     };
   },
+
   methods: {
-    async handleSubmit() {
+    async findMentors() {
+      console.log("Thông tin tìm kiếm Mentor:", {
+        fullName: this.fullName,
+        specialization: this.specialization,
+        gender: this.gender,
+      });
+
       this.isLoading = true;
+      this.showNoMentorMessage = false; // Reset message before new search
 
       try {
-        // Gửi dữ liệu đến API backend để kiểm tra người dùng có tồn tại không
-        const response = await axios.get(`http://localhost:5000/matches?name=${this.fullName}`);
-
-        if (response.data.exists) {
-          // Nếu người dùng tồn tại, hiển thị thông tin của người đó
-          const userDetails = response.data.users[0]; // Lấy thông tin người dùng đầu tiên
-          this.mentors = [{
-            mentor: userDetails.fullName,
-            mentor_spec: userDetails.specialization,
-            email: userDetails.email,
-            phone: userDetails.phone,
-            gender: userDetails.gender,
-          }];
-          
-          // Cập nhật số lần tên người dùng xuất hiện
-          this.userCount = response.data.count;
-        } else {
-          // Nếu không tìm thấy người dùng, gửi dữ liệu đến backend để tìm mentor
-          const searchResponse = await axios.post('http://localhost:5000/api/find_mentors', {
+        const response = await fetch("http://localhost:5000/api/find_mentors", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             fullName: this.fullName,
             specialization: this.specialization,
             gender: this.gender,
-            email: this.email,
-            phone: this.phone,
-          });
+          }),
+        });
 
-          this.mentors = searchResponse.data.matches;
-          this.userCount = 0; // Nếu không có kết quả, đếm số lần bằng 0
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.statusText}`);
         }
-        
-        this.isLoading = false;
+
+        const data = await response.json(); // Chuyển đổi dữ liệu trả về từ API thành JSON
+        console.log("Dữ liệu từ API:", data); // Log dữ liệu từ API vào console
+
+        this.mentors = data || []; // Gán dữ liệu vào mentors
+
+        if (this.mentors.length === 0) {
+          this.showNoMentorMessage = true;
+        }
       } catch (error) {
-        console.error("There was an error:", error);
+        console.error("Có lỗi trong quá trình gọi API:", error);
+        this.showNoMentorMessage = true;
+      } finally {
         this.isLoading = false;
       }
     },
-  },
-  components: {
-    ListMentor,
+
+    async handleSubmit() {
+      this.mentors = []; // Xóa kết quả tìm kiếm cũ
+      await this.findMentors(); // Gọi phương thức tìm mentor
+    },
   },
 };
 </script>
+
 
 <style scoped>
 /* Import Google font - Poppins */
