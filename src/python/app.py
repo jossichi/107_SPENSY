@@ -7,6 +7,7 @@ import requests
 from transformers import BertForSequenceClassification, BertTokenizer, MarianMTModel, MarianTokenizer
 import torch
 import time
+import torch.nn.functional as F
 
 # Load translation model
 translation_model_name = "Helsinki-NLP/opus-mt-vi-en"
@@ -454,8 +455,16 @@ def classify_text(text):
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
     outputs = model(**inputs)
     logits = outputs.logits
-    predicted_class = torch.argmax(logits, dim=1).item()
-    return predicted_class
+    # Apply softmax to logits to get probabilities
+    probabilities = F.softmax(logits, dim=1)
+    
+    # Get the predicted class (the class with the highest probability)
+    predicted_class = torch.argmax(probabilities, dim=1).item()
+    
+    # Get the probability for the predicted class
+    class_probability = probabilities[0][predicted_class].item()
+
+    return predicted_class, class_probability
 
 @app.route('/add_comment', methods=['POST'])
 def add_comment():
@@ -482,7 +491,7 @@ def add_comment():
             start_classify = time.time()
             prediction = classify_text(translated_text)
             end_classify = time.time()
-            print(f"Prediction Result: {prediction}")
+            # print(f"Prediction Result: {prediction}")
             print(f"Classification Time: {end_classify - start_classify:.2f} seconds")
 
             # Response

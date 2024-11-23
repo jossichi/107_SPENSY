@@ -6,7 +6,7 @@
                 type="text"
                 v-model="newComment"
                 @keyup.enter="addComment"
-                placeholder="+ Add a note"
+                placeholder="+ Vui lòng nhập câu bình luận"
                 class="form-control addtxt"
             />
         </div>
@@ -31,10 +31,11 @@
                 
                 <!-- Display translation and classification results after backend response -->
                 <div v-if="!comment.isLoading && comment.translatedText">
-                    <p><strong>Translated Text:</strong> {{ comment.translatedText }}</p>
-                    <p><strong>Prediction (Sentiment):</strong> {{ comment.prediction }}</p>
-                    <p><strong>Translation Time:</strong> {{ comment.translationTime }} seconds</p>
-                    <p><strong>Classification Time:</strong> {{ comment.classificationTime }} seconds</p>
+                    <p><strong>Câu văn đã dịch:</strong> {{ comment.translatedText }}</p>
+                    <p><strong>Kết quả và xác suất phân loại:</strong> {{ comment.prediction }}</p>
+                    
+                    <p><strong>Thời gian dịch:</strong> {{ comment.translationTime }} seconds</p>
+                    <p><strong>Thời gian phân loại:</strong> {{ comment.classificationTime }} seconds</p>
                 </div>
             </div>
         </div>
@@ -53,60 +54,64 @@ export default {
     },
     methods: {
         addComment() {
-    if (this.newComment.trim() !== "") {
-        const newComment = {
-            text: this.newComment,
-            author: "Anonymous",
-            avatar: "https://i.imgur.com/tPvlEdq.jpg",
-            upvotes: "",
-            translatedText: "",
-            prediction: "",
-            classificationTime: "",
-            translationTime: "",
-            classification: "",  // Add a new field to store classification label
-        };
-
-        // Add comment locally
-        this.comments.unshift(newComment);
-
-        // Send comment to Python backend
-        axios
-            .post("http://127.0.0.1:5000/add_comment", { text: this.newComment })  // Only send text
-            .then((response) => {
-                const { translated_text, prediction, translation_time, classification_time } = response.data;
-
-                // Log the response to console
-                console.log(`New Comment Received: ${this.newComment}`);
-                console.log(`Translated Text: ${translated_text}`);
-                console.log(`Prediction Result: ${prediction}`);
-                console.log(`Translation Time: ${translation_time} seconds`);
-                console.log(`Classification Time: ${classification_time} seconds`);
-
-                // Now, update the comment in the array with backend data
-                const updatedComment = {
-                    ...newComment,  // Keep the original data
-                    translatedText: translated_text,
-                    prediction: prediction,
-                    translationTime: translation_time,
-                    classificationTime: classification_time,
-                    classification: prediction === 0 ? "Negative" : "Positive",
+            if (this.newComment.trim() !== "") {
+                const newComment = {
+                    text: this.newComment,
+                    author: "Anonymous",
+                    avatar: "https://i.imgur.com/tPvlEdq.jpg",
+                    upvotes: "",
+                    translatedText: "",
+                    prediction: "",
+                    classificationTime: "",
+                    translationTime: "",
+                    classification: "",  // Add a new field to store classification label
+                    probability: "",  // Add a new field to store classification probability
                 };
 
-                // Directly update the comment in the array
-                this.comments[0] = updatedComment;  // Update the first comment (index 0)
+                // Add comment locally
+                this.comments.unshift(newComment);
 
-                console.log("Comment processed successfully:", response.data);
-            })
-            .catch((error) => {
-                console.error("Error sending comment:", error);
-            });
+                // Send comment to Python backend
+                axios
+                    .post("http://127.0.0.1:5000/add_comment", { text: this.newComment })  // Only send text
+                    .then((response) => {
+                        const { translated_text, prediction, probability, translation_time, classification_time } = response.data;
 
-        this.newComment = ""; // Clear the input field
-    }
-},
+                        // Log the response to console
+                        console.log(`New Comment Received: ${this.newComment}`);
+                        console.log(`Translated Text: ${translated_text}`);
+                        console.log(`Prediction Result: ${prediction}`);
+                        console.log(`Classification Probability: ${probability}`);
+                        console.log(`Translation Time: ${translation_time} seconds`);
+                        console.log(`Classification Time: ${classification_time} seconds`);
+
+                        // Now, update the comment in the array with backend data
+                        const updatedComment = {
+                            ...newComment,  // Keep the original data
+                            translatedText: translated_text,
+                            prediction: prediction,
+                            probability: probability,  // Store the probability
+                            translationTime: translation_time,
+                            classificationTime: classification_time,
+                            classification: prediction === 0 ? "Tích cực" : "Tiêu cực",
+                        };
+
+                        // Directly update the comment in the array
+                        this.comments[0] = updatedComment;  // Update the first comment (index 0)
+
+                        console.log("Comment processed successfully:", response.data);
+                    })
+                    .catch((error) => {
+                        console.error("Error sending comment:", error);
+                    });
+
+                this.newComment = ""; // Clear the input field
+            }
+        },
     },
 };
 </script>
+
 
 <style lang="css" scoped>
 body{
@@ -114,14 +119,14 @@ body{
 }
 .container{
 	background-color: #eef2f5;
-	width: 400px;
+	width: 100vw;
 }
 .addtxt{
 	padding-top: 10px;
 	padding-bottom: 10px;
 	text-align: center;
 	font-size: 13px;
-	width: 350px;
+	width: 100vw;
 	background-color: #e5e8ed;
 	font-weight: 500;
 }
@@ -130,7 +135,7 @@ body{
 }
 
 .second{
-	width: 350px;
+	width: 100vw;
 	background-color: white;
 	border-radius: 4px;
 	box-shadow: 10px 10px 5px #aaaaaa;
@@ -147,8 +152,8 @@ body{
     color: #56575b;
 }
 .text3{
-	font-size: 13px;
-    font-weight: 500;
+	font-size: 20px;
+    font-weight: bold;
     margin-right: 4px;
     color: #828386;
 }

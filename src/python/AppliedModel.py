@@ -35,9 +35,17 @@ def classify_text(text):
     """
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
     outputs = model(**inputs)
-    logits = outputs.logits
-    predicted_class = torch.argmax(logits, dim=1).item()
-    return predicted_class
+    
+    # Apply softmax to logits to get probabilities
+    probabilities = F.softmax(outputs.logits, dim=1)
+    
+    # Get the predicted class (the class with the highest probability)
+    predicted_class = torch.argmax(probabilities, dim=1).item()
+    
+    # Get the probability for the predicted class
+    class_probability = probabilities[0][predicted_class].item()
+
+    return predicted_class, class_probability
 
 @app.route('/add_comment', methods=['POST'])
 def add_comment():
@@ -62,17 +70,22 @@ def add_comment():
 
             # Classification
             start_classify = time.time()
-            prediction = classify_text(translated_text)
+            predicted_class, class_probability = classify_text(translated_text)
             end_classify = time.time()
-            print(f"Prediction Result: {prediction}")
+            print(f"Prediction Result: {predicted_class}")
+            print(f"Classification Probability: {class_probability:.4f}")
             print(f"Classification Time: {end_classify - start_classify:.2f} seconds")
+
+            # Map predicted_class to human-readable labels
+            sentiment_label = "Positive" if predicted_class == 1 else "Negative"
 
             # Response
             return jsonify({
                 "status": "success",
                 "original_comment": comment,
                 "translated_text": translated_text,
-                "prediction": prediction,
+                "prediction": sentiment_label,
+                "probability": class_probability,
                 "translation_time": end_translate - start_translate,
                 "classification_time": end_classify - start_classify
             }), 200
