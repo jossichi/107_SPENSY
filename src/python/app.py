@@ -448,23 +448,26 @@ def translate_vi_to_en(text):
     return translated_text
 
 def classify_text(text):
-    """
-    Classifies text sentiment using the BERT model.
-    Returns the predicted class.
-    """
+    # Tokenize input text
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    
+    # Get model outputs
     outputs = model(**inputs)
-    logits = outputs.logits
+    
     # Apply softmax to logits to get probabilities
-    probabilities = F.softmax(logits, dim=1)
+    probabilities = F.softmax(outputs.logits, dim=1)
     
     # Get the predicted class (the class with the highest probability)
-    predicted_class = torch.argmax(probabilities, dim=1).item()
+    prediction = torch.argmax(probabilities, dim=1).item()
     
     # Get the probability for the predicted class
-    class_probability = probabilities[0][predicted_class].item()
-
-    return predicted_class, class_probability
+    prediction_prob = probabilities[0][prediction].item()
+    
+    # Return the class label and its corresponding probability
+    if prediction == 1:
+        return "Tích cực", prediction_prob
+    else:
+        return "Tiêu cực", prediction_prob
 
 @app.route('/add_comment', methods=['POST'])
 def add_comment():

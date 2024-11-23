@@ -21,7 +21,7 @@
                         <span class="text2">{{ comment.author }}</span>
                     </div>
                     <div>
-                        <span class="text3">{{ comment.classification }}</span>  <!-- Classification result -->
+                        <!-- <span class="text3">{{ comment.classification }}</span>  Classification result -->
                     </div>
                 </div>
 
@@ -64,8 +64,8 @@ export default {
                     prediction: "",
                     classificationTime: "",
                     translationTime: "",
-                    classification: "",  // Add a new field to store classification label
-                    probability: "",  // Add a new field to store classification probability
+                    classification: "",  
+                    probability: "",  
                 };
 
                 // Add comment locally
