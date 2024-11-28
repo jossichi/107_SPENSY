@@ -392,6 +392,18 @@
                     >Click vào đây</a
                   >
                 </div>
+
+                <div class="head_title margin-top-80 wow fadeInUp">
+                  <h2>Quá trình làm việc</h2>
+                  <p>
+                    Tài liệu đồ án vui lòng đọc ở đây
+                  </p>
+                  <a
+                    href="https://docs.google.com/document/d/1hWAFLyaW52ZaJXwz4RKu-1LjoXoEMIFsmpI6FFR2IMk/edit?usp=sharing"
+                    class="btn btn-default waves-effect waves-purple"
+                    >Click vào đây</a
+                  >
+                </div>
               </div>
 
               <div class="main_portfolio_content sections wow fadeInUp">
@@ -10855,14 +10867,6 @@ button.close {
   transition-delay: 0s;
 }
 
-/*
-Author: XpeedStudio
-Author URI: http://themeforest.net/user/XpeedStudio/portfolio
-*/
-
-/* animate css*/
-
-@charset "UTF-8";
 .animated {
   -webkit-animation-duration: 1s;
   animation-duration: 1s;
@@ -15298,7 +15302,7 @@ Author URI: http://themeforest.net/user/XpeedStudio/portfolio
 .owl-theme .owl-dots .owl-dot {
   display: inline-block;
   zoom: 1;
-  *display: inline;
+  
 }
 .owl-theme .owl-dots .owl-dot span {
   width: 10px;

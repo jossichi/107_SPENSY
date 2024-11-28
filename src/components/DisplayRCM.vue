@@ -94,19 +94,16 @@
       <ListMentor :mentors="mentors" />
     </div>
 
-    <Particles id="particles-js" class="particles" :params="particlesOptions" />
   </div>
 </template>
 
 <script>
-// Import ListMentor component
 import ListMentor from "./ListMentor.vue";
-import Particles from "vue-particles";
 
 export default {
   components: {
     ListMentor,
-    Particles,
+
   },
   data() {
     return {

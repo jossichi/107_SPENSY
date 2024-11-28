@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import json
 import pandas as pd
 import os
@@ -7,7 +7,9 @@ import requests
 from transformers import BertForSequenceClassification, BertTokenizer, MarianMTModel, MarianTokenizer
 import torch
 import time
+import graphviz
 import torch.nn.functional as F
+from datetime import datetime
 
 # Load translation model
 translation_model_name = "Helsinki-NLP/opus-mt-vi-en"
@@ -81,13 +83,27 @@ class KaryTree:
                     else:
                         child_node.add_child(KaryTreeNode(item))
 
-    def print_tree(self, node=None, level=0):
-        if node is None:
-            node = self.root
-        print(" " * level * 2 + node.value )
-        for child in node.children:
-            self.print_tree(child, level + 1)
+    def render_tree(self, output_file="tree_output.png"):
+        """
+        Phương thức để xuất cây thành file PNG với kích thước 4K.
+        """
+        dot = graphviz.Digraph(comment='Cây chuyên môn')
 
+        def add_edges(node):
+            for child in node.children:
+                dot.edge(node.value, child.value)
+                add_edges(child)
+
+        # Thêm các cạnh của cây vào đồ thị
+        add_edges(self.root)
+
+        # Thiết lập các thuộc tính cho kích thước đồ thị (4K)
+        dot.attr(size="3840,2160", dpi="300")  # Điều chỉnh kích thước và độ phân giải
+        dot.attr('graph', ratio='compress')  # Giảm tỷ lệ đồ thị để phù hợp với kích thước 4K
+
+        # Lưu đồ thị dưới dạng PNG với kích thước 4K
+        dot.render(output_file, format="png", cleanup=True)
+        print(f"Cây đã được lưu thành file PNG tại: {output_file}")
 # Đọc dữ liệu từ file JSON để xây dựng cây k-ary
 json_file_path = os.path.join(r'src/python/list.json')
 
@@ -100,6 +116,7 @@ with open(json_file_path, 'r', encoding='utf-8') as file:
 
 tree = KaryTree()
 tree.build_tree(data)
+# tree.render_tree(output_file="tree_output.png")
 
 def get_subcategories(tree_node, category):
     if tree_node.value == category:
@@ -114,22 +131,17 @@ def get_related_specialties(tree_node, category, related_specialties=None):
     if related_specialties is None:
         related_specialties = set()
 
-    # Thêm chuyên môn của node vào set
     related_specialties.add(category)
 
-    # Duyệt qua các con của node và thêm vào set nếu chúng là chuyên môn con
     for child in tree_node.children:
         if child.value == category:
-            # Khi tìm thấy chuyên môn, đi lên và tìm cha để thêm vào
             find_parents(child, related_specialties)
         elif isinstance(child, KaryTreeNode):
-            # Tìm các chuyên môn liên quan của con
             get_related_specialties(child, category, related_specialties)
 
     return list(related_specialties)
 
 def find_parents(tree_node, related_specialties):
-    # Duyệt lên các cha để lấy tất cả các chuyên môn cha
     while tree_node:
         related_specialties.add(tree_node.value)
         if not tree_node.parent:
@@ -469,16 +481,38 @@ def classify_text(text):
     else:
         return "Tiêu cực", prediction_prob
 
+EXCEL_FILE = "/comments_and_posts.xlsx"
+def save_to_excel(data):
+    """
+    Saves data to an Excel file. Creates a new file if it doesn't exist.
+    """
+    columns = [
+        "User ID", "Post ID", "Post Content", "Comment Content",
+        "Classification", "Probability", "Translation Time", "Classification Time"
+    ]
+
+    # Convert data to a DataFrame
+    df = pd.DataFrame([data], columns=columns)
+
+    # Check if the file exists
+    if os.path.exists(EXCEL_FILE):
+        # Append to the existing file
+        existing_df = pd.read_excel(EXCEL_FILE)
+        combined_df = pd.concat([existing_df, df], ignore_index=True)
+        combined_df.to_excel(EXCEL_FILE, index=False)
+    else:
+        # Create a new file with column headers
+        df.to_excel(EXCEL_FILE, index=False)
+
 @app.route('/add_comment', methods=['POST'])
 def add_comment():
-    """
-    Receives a comment from the frontend, processes it through the AI model,
-    and returns the translated text and classification result.
-    """
+
     try:
         # Parse JSON request
         data = request.get_json()
-        comment = data.get('text', None)  # Get the user's comment
+        user_id = data.get('user_id', 'Anonymous') 
+        post_id = data.get('post_id', 'N/A') 
+        comment = data.get('text', None)  
 
         if comment:  # If comment is valid
             print(f"New Comment Received: {comment}")  # Log to console
@@ -494,8 +528,23 @@ def add_comment():
             start_classify = time.time()
             prediction = classify_text(translated_text)
             end_classify = time.time()
-            # print(f"Prediction Result: {prediction}")
+            
             print(f"Classification Time: {end_classify - start_classify:.2f} seconds")
+
+            # Prepare data to save in Excel
+            excel_data = {
+                "User ID": user_id,
+                "Post ID": post_id,
+                "Post Content": None,  # Not applicable for comments
+                "Comment Content": comment,
+                "Classification": prediction,
+                
+                "Translation Time": end_translate - start_translate,
+                "Classification Time": end_classify - start_classify
+            }
+
+            # Save to Excel
+            save_to_excel(excel_data)
 
             # Response
             return jsonify({
@@ -503,6 +552,7 @@ def add_comment():
                 "original_comment": comment,
                 "translated_text": translated_text,
                 "prediction": prediction,
+                
                 "translation_time": end_translate - start_translate,
                 "classification_time": end_classify - start_classify
             }), 200
@@ -513,6 +563,11 @@ def add_comment():
         print(f"Error processing request: {e}")
         return jsonify({"status": "error", "message": "Invalid request."}), 500
 
-
+@app.route('/get_comments_and_posts', methods=['GET'])
+def get_comments_and_posts():
+    if os.path.exists(EXCEL_FILE):
+        return send_file(EXCEL_FILE, as_attachment=True)
+    else:
+        return jsonify({"status": "error", "message": "Excel file not found."}), 404
 if __name__ == '__main__':
     app.run(debug=True)

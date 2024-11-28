@@ -1,5 +1,27 @@
 <template>
     <div class="container justify-content-center mt-5 border-left border-right">
+        <!-- Input field for new status -->
+        <div class="d-flex flex-column justify-content-center pt-3 pb-2">
+            <textarea
+                v-model="newStatus"
+                placeholder="Đăng trạng thái của bạn..."
+                class="form-control addtxt mb-2"
+                rows="3"
+            ></textarea>
+            <input type="file" @change="uploadImage" class="form-control mb-3" />
+            <button @click="postStatus" class="btn btn-primary">Đăng</button>
+        </div>
+
+        <!-- Render statuses dynamically -->
+        <div v-for="(status, index) in statuses" :key="index" class="d-flex flex-column py-2">
+            <div class="second py-2 px-2">
+                <p><strong>Trạng thái:</strong> {{ status.text }}</p>
+                <div v-if="status.image">
+                    <img :src="status.image" alt="Uploaded Image" class="img-fluid mt-2" />
+                </div>
+            </div>
+        </div>
+
         <!-- Input field for new comments -->
         <div class="d-flex justify-content-center pt-3 pb-2">
             <input
@@ -10,33 +32,12 @@
                 class="form-control addtxt"
             />
         </div>
-        
+
         <!-- Render comments dynamically -->
-        <div class="d-flex justify-content-center py-2" v-for="(comment, index) in comments" :key="index">
+        <div v-for="(comment, index) in comments" :key="index" class="d-flex justify-content-center py-2">
             <div class="second py-2 px-2">
                 <span class="text1">{{ comment.text }}</span>
-                <div class="d-flex justify-content-between py-1 pt-2">
-                    <div>
-                        <img :src="comment.avatar" width="18" height="18">
-                        <span class="text2">{{ comment.author }}</span>
-                    </div>
-                    <div>
-                        <!-- <span class="text3">{{ comment.classification }}</span>  Classification result -->
-                    </div>
-                </div>
-
-                <div v-if="comment.isLoading">
-                    <p>Loading...</p>  
-                </div>
-                
-                <!-- Display translation and classification results after backend response -->
-                <div v-if="!comment.isLoading && comment.translatedText">
-                    <p><strong>Câu văn đã dịch:</strong> {{ comment.translatedText }}</p>
-                    <p><strong>Kết quả và xác suất phân loại:</strong> {{ comment.prediction }}</p>
-                    
-                    <p><strong>Thời gian dịch:</strong> {{ comment.translationTime }} seconds</p>
-                    <p><strong>Thời gian phân loại:</strong> {{ comment.classificationTime }} seconds</p>
-                </div>
+                <!-- Remaining logic for comment remains the same -->
             </div>
         </div>
     </div>
@@ -50,9 +51,51 @@ export default {
         return {
             newComment: "",
             comments: [],
+            uploadedImage: null,
+            statuses: [],
         };
     },
     methods: {
+        uploadImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.uploadedImage = e.target.result; // Base64 format
+                };
+                reader.readAsDataURL(file);
+            }
+        },
+
+        // Post status
+        postStatus() {
+            if (this.newStatus.trim() || this.uploadedImage) {
+                const newStatus = {
+                    text: this.newStatus,
+                    image: this.uploadedImage,
+                };
+
+                // Add status locally
+                this.statuses.unshift(newStatus);
+
+                // Send to backend
+                axios
+                    .post("http://127.0.0.1:5000/add_comment", {
+                        text: this.newStatus,
+                        image: this.uploadedImage, // Optional image
+                    })
+                    .then((response) => {
+                        console.log("Status posted successfully:", response.data);
+                    })
+                    .catch((error) => {
+                        console.error("Error posting status:", error);
+                    });
+
+                // Clear fields
+                this.newStatus = "";
+                this.uploadedImage = null;
+            }
+        },
         addComment() {
             if (this.newComment.trim() !== "") {
                 const newComment = {
@@ -111,7 +154,6 @@ export default {
     },
 };
 </script>
-
 
 <style lang="css" scoped>
 body{

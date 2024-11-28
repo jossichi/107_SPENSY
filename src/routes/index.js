@@ -4,7 +4,8 @@ import DisplayRCM from "../components/DisplayRCM.vue";
 import MasterPage from "@/components/MasterPage.vue";
 // import App from '@/App.vue';
 import CommentsSystem from "../components/CommentsSystem.vue"
-
+import PoststingStatus from '@/components/Status/PoststingStatus.vue';
+import TablesAdmin from '@/components/Status/TablesAdmin.vue';
 const routes = [
   {
     path: "/",
@@ -18,6 +19,14 @@ const routes = [
   {
     path: "/cmt",
     component: CommentsSystem,
+  },
+  {
+    path: "/posting",
+    component: PoststingStatus,
+  },
+  {
+    path: "/admin",
+    component: TablesAdmin,
   },
 ];
 
