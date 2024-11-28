@@ -50,6 +50,7 @@
         </div>
 
         <div class="gender-box mb-4">
+          <!-- <h3 class="font-bold">Giới tính</h3> -->
           <label for="gender" class="block gender-label">Giới tính</label>
           <div class="gender-option flex space-x-4">
             <div class="gender">
@@ -92,104 +93,116 @@
     <!-- Phần danh sách Mentor -->
     <div class="right w-1/2 p-4">
       <ListMentor :mentors="mentors" />
-    </div>
 
+      <!-- Hiển thị thông báo nếu không có mentor -->
+      <!-- <p v-if="mentors.length === 0 && showNoMentorMessage && !isLoading" class="text-red-500">Hiện mentor phù hợp với bạn chưa có</p> -->
+    </div>
+    
   </div>
 </template>
 
 <script>
+// Import ListMentor component
 import ListMentor from "./ListMentor.vue";
 
 export default {
   components: {
     ListMentor,
-
   },
   data() {
     return {
       fullName: "",
       specialization: "",
       gender: [],
-      mentors: [], // Mảng để chứa dữ liệu mentor
+      mentors: [],
       showNoMentorMessage: false,
       isLoading: false,
       particlesOptions: {
-        particlesOptions: {
-          particles: {
-            number: {
-              value: 100, // Số lượng hạt
-            },
-            shape: {
-              type: "circle", // Hình dạng của hạt
-            },
-            size: {
-              value: 4, // Kích thước của hạt
-            },
-            color: {
-              value: "#ff0000", // Màu của hạt
-            },
-            move: {
-              enable: true, // Cho phép di chuyển
-              speed: 2, // Tốc độ di chuyển
-            },
-          },
-        },
+particlesOptions: {
+  particles: {
+    number: {
+      value: 100, // Số lượng hạt
+    },
+    shape: {
+      type: "circle", // Hình dạng của hạt
+    },
+    size: {
+      value: 4, // Kích thước của hạt
+    },
+    color: {
+      value: "#ff0000", // Màu của hạt
+    },
+    move: {
+      enable: true, // Cho phép di chuyển
+      speed: 2, // Tốc độ di chuyển
+    },
+  },
+},
       },
     };
   },
 
   methods: {
     async findMentors() {
-      console.log("Thông tin tìm kiếm Mentor:", {
-        fullName: this.fullName,
-        specialization: this.specialization,
-        gender: this.gender,
+    console.log("Tìm mentor với các thông tin:", {
+      fullName: this.fullName,
+      specialization: this.specialization,
+      gender: this.gender,
+    });
+
+    this.isLoading = true;
+    this.showNoMentorMessage = false;
+
+    try {
+      const response = await fetch("http://localhost:5000/api/find_mentors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName: this.fullName,
+          specialization: this.specialization,
+          gender: this.gender,
+        }),
       });
 
-      this.isLoading = true;
-      this.showNoMentorMessage = false; // Reset message before new search
-
-      try {
-        const response = await fetch("http://localhost:5000/api/find_mentors", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fullName: this.fullName,
-            specialization: this.specialization,
-            gender: this.gender,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.statusText}`);
-        }
-
-        const data = await response.json(); // Chuyển đổi dữ liệu trả về từ API thành JSON
-        console.log("Dữ liệu từ API:", data); // Log dữ liệu từ API vào console
-
-        this.mentors = data || []; // Gán dữ liệu vào mentors
-
-        if (this.mentors.length === 0) {
-          this.showNoMentorMessage = true;
-        }
-      } catch (error) {
-        console.error("Có lỗi trong quá trình gọi API:", error);
-        this.showNoMentorMessage = true;
-      } finally {
-        this.isLoading = false;
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
-    },
+
+      const data = await response.json();
+      console.log("Dữ liệu từ API:", data);
+
+      // Kiểm tra dữ liệu trả về
+      if (data && Array.isArray(data)) {
+        // Chuyển dữ liệu thành định dạng bạn cần
+        this.mentors = data.map(item => ({
+          mentor: item.mentor,               // Tên mentor
+          mentor_specialty: item.specialty,  // Chuyên môn
+        }));
+      } else {
+        console.error("Dữ liệu API không đúng định dạng");
+        this.showNoMentorMessage = true;  // Nếu dữ liệu không hợp lệ, hiển thị thông báo
+      }
+
+      if (this.mentors.length === 0) {
+        this.showNoMentorMessage = true;
+      }
+    } catch (error) {
+      console.error("Có lỗi khi gọi API:", error);
+      this.showNoMentorMessage = true; // Hiển thị thông báo khi có lỗi
+    } finally {
+      this.isLoading = false;
+    }
+  },
 
     async handleSubmit() {
-      this.mentors = []; // Xóa kết quả tìm kiếm cũ
-      await this.findMentors(); // Gọi phương thức tìm mentor
+      this.mentors = []; // Clear previous search results
+      await this.findMentors();
     },
   },
 };
 </script>
-
 
 <style scoped>
 /* Import Google font - Poppins */

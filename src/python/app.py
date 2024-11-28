@@ -9,9 +9,10 @@ import torch
 import time
 import graphviz
 import torch.nn.functional as F
-from datetime import datetime
+import random
+import string
+from collections import defaultdict
 
-# Load translation model
 translation_model_name = "Helsinki-NLP/opus-mt-vi-en"
 tokenizer_translate = MarianTokenizer.from_pretrained(translation_model_name)
 model_translate = MarianMTModel.from_pretrained(translation_model_name)
@@ -104,7 +105,7 @@ class KaryTree:
         # Lưu đồ thị dưới dạng PNG với kích thước 4K
         dot.render(output_file, format="png", cleanup=True)
         print(f"Cây đã được lưu thành file PNG tại: {output_file}")
-# Đọc dữ liệu từ file JSON để xây dựng cây k-ary
+
 json_file_path = os.path.join(r'src/python/list.json')
 
 data = {}
@@ -193,6 +194,16 @@ def match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree):
             matches.append((mentor["Họ tên"], mentor_specialty))
 
     return matches
+
+def get_specialty_depth(tree_node, specialty, current_depth=0):
+    if tree_node.value.lower() == specialty.lower():
+        return current_depth
+    
+    for child in tree_node.children:
+        depth = get_specialty_depth(child, specialty, current_depth + 1)
+        if depth != -1:  # Nếu tìm thấy chuyên môn
+            return depth
+    return -1
 
 class Node:
     def __init__(self, mentor, mentee, mentor_specialty, mentee_specialty):
@@ -443,8 +454,24 @@ def find_mentors():
         user_gender = 1 if gender_value in ['female', 'woman', 'f'] else 0
 
         matched_mentors = match_mentor_mentee_kary(df_mentor, user_specialty, user_gender, tree)
-        print(matched_mentors)
-        return jsonify(matched_mentors)
+        print("Cấu trúc của matched_mentors:", matched_mentors)  # In ra cấu trúc để kiểm tra
+        matched_mentors_sorted = sorted(matched_mentors, key=lambda mentor: get_specialty_depth(tree.root, mentor[1]), reverse=False)
+        unique_mentors = {}
+        for mentor in matched_mentors_sorted:
+            mentor_name = mentor[0]
+            mentor_specialty = mentor[1]
+
+            # Nếu mentor chưa có trong danh sách unique_mentors, thêm vào
+            if mentor_name not in unique_mentors:
+                unique_mentors[mentor_name] = mentor_specialty
+
+        # Convert lại unique_mentors thành danh sách (mảng)
+        final_mentors = [{"mentor": name, "specialty": specialty} for name, specialty in unique_mentors.items()]
+        
+        # Giới hạn số lượng mentor nếu cần
+        final_mentors = final_mentors[:3]
+
+        return jsonify(final_mentors)
     
     except Exception as e:
         print(f"Đã xảy ra lỗi: {e}")
@@ -481,7 +508,8 @@ def classify_text(text):
     else:
         return "Tiêu cực", prediction_prob
 
-EXCEL_FILE = "/comments_and_posts.xlsx"
+EXCEL_FILE = os.path.join(os.getcwd(), "comments_and_posts.xlsx")
+
 def save_to_excel(data):
     """
     Saves data to an Excel file. Creates a new file if it doesn't exist.
@@ -504,18 +532,25 @@ def save_to_excel(data):
         # Create a new file with column headers
         df.to_excel(EXCEL_FILE, index=False)
 
+def generate_user_id():
+    return 'User-' + ''.join(random.choices(string.digits, k=3))  # Generates a random 3-digit ID
+
+# Function to generate a random Post ID (e.g., Post-001, Post-002, etc.)
+def generate_post_id():
+    return 'Post-' + ''.join(random.choices(string.digits, k=3)) 
+
 @app.route('/add_comment', methods=['POST'])
 def add_comment():
-
     try:
         # Parse JSON request
         data = request.get_json()
-        user_id = data.get('user_id', 'Anonymous') 
-        post_id = data.get('post_id', 'N/A') 
-        comment = data.get('text', None)  
+        user_id = data.get('user_id', generate_user_id())
+        post_id = data.get('post_id', generate_post_id() if not data.get('text') else 'N/A')
+        comment = data.get('text', None)
+        post_type = data.get('is_post', False)  # Add a flag to determine if this is a post or comment
 
         if comment:  # If comment is valid
-            print(f"New Comment Received: {comment}")  # Log to console
+            print(f"New { 'Post' if post_type else 'Comment' } Received: {comment}")  # Log to console
 
             # Translation
             start_translate = time.time()
@@ -526,19 +561,18 @@ def add_comment():
 
             # Classification
             start_classify = time.time()
-            prediction = classify_text(translated_text)
+            classification, probability = classify_text(translated_text)  # Get both classification and probability
             end_classify = time.time()
-            
             print(f"Classification Time: {end_classify - start_classify:.2f} seconds")
 
             # Prepare data to save in Excel
             excel_data = {
                 "User ID": user_id,
                 "Post ID": post_id,
-                "Post Content": None,  # Not applicable for comments
-                "Comment Content": comment,
-                "Classification": prediction,
-                
+                "Post Content": None if not post_type else comment,  # If post, use post text
+                "Comment Content": comment if not post_type else None,  # If comment, use comment text
+                "Classification": classification,  # Store classification label (e.g., Tích cực, Tiêu cực)
+                "Probability": probability,  # Store the probability value
                 "Translation Time": end_translate - start_translate,
                 "Classification Time": end_classify - start_classify
             }
@@ -551,8 +585,8 @@ def add_comment():
                 "status": "success",
                 "original_comment": comment,
                 "translated_text": translated_text,
-                "prediction": prediction,
-                
+                "prediction": classification,
+                "probability": probability,
                 "translation_time": end_translate - start_translate,
                 "classification_time": end_classify - start_classify
             }), 200
