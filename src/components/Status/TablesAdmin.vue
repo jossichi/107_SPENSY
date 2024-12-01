@@ -49,13 +49,16 @@
       <button class="btn btn-primary" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">Next</button>
     </div>
 
-    <!-- Charts -->
+    <!-- Charts Section (Both Charts Side by Side) -->
     <div class="row mt-5">
-      <div class="col-md-6">
+      <div class="col-md-6" v-if="commentChartSeries.length > 0">
         <h3 class="text-center">Comment Statistics</h3>
         <apexchart type="pie" :options="commentChartOptions" :series="commentChartSeries"></apexchart>
       </div>
-
+      <div class="col-md-6" v-if="wordCountChartSeries.length > 0">
+        <h3 class="text-center">Comments by Word Count</h3>
+        <apexchart type="line" :options="wordCountChartOptions" :series="wordCountChartSeries"></apexchart>
+      </div>
     </div>
   </div>
 </template>
@@ -82,9 +85,25 @@ export default {
         chart: { type: 'pie' },
         labels: ['Positive Comments', 'Negative Comments'],
       },
-     
-      commentChartSeries: [],
-      postChartSeries: [],
+      wordCountChartOptions: {
+        chart: { type: 'line' },
+        xaxis: { title: { text: 'Số từ' }, categories: [] }, // Word counts on x-axis
+        yaxis: { title: { text: 'Số lượng bình luận' } }, // Comment counts on y-axis
+        title: { text: 'Số lượng bình luận theo số từ' },
+        tooltip: {
+          shared: true,
+          intersect: false,
+          y: {
+            formatter: (val) => {
+              return `${val} bình luận`; 
+            },
+          },
+        },
+      },
+      wordCountChartSeries: [],  // Initialize as empty array
+      commentChartSeries: [],    // Initialize as empty array
+      percentageData: [],
+      commentCount: 0,
     };
   },
   methods: {
@@ -106,62 +125,95 @@ export default {
           console.error('Error loading Excel file:', error);
         });
     },
-
     processData() {
-      this.commentStats = { positive: 0, negative: 0 };
-      this.postStats = { positive: 0, negative: 0 };
+  this.commentStats = { positive: 0, negative: 0 };
+  this.postStats = { positive: 0, negative: 0 };
 
-      this.filteredData.forEach((item) => {
-        const classification = String(item['Classification'] || '').trim();
+  let wordCountStats = {};
 
-        // Check for comment content and classify
-        if (item['Comment Content']) {
-          if (classification === 'Tích cực') {
-            this.commentStats.positive++;
-          } else if (classification === 'Tiêu cực') {
-            this.commentStats.negative++;
-          }
-        }
-        // Check for post content and classify
-        else if (item['Post Content']) {
-          if (classification === 'Tích cực') {
-            this.postStats.positive++;
-          } else if (classification === 'Tiêu cực') {
-            this.postStats.negative++;
-          }
-        }
-      });
+  this.commentCount = 0;
+  let minWordCount = Infinity;
+  let maxWordCount = -Infinity;
 
-      // Prepare data for pie charts
-      this.commentChartSeries = [this.commentStats.positive, this.commentStats.negative];
-      this.postChartSeries = [this.postStats.positive, this.postStats.negative];
-    },
+  this.filteredData.forEach((item) => {
+    const classification = String(item['Classification'] || '').trim();
+
+    if (item['Comment Content']) {
+      const commentContent = item['Comment Content'];
+      this.commentCount++; // Increment the comment count
+
+      // Count words in the comment (use split to get each word)
+      const wordCount = commentContent.split(/\s+/).filter(Boolean).length;
+
+      // Track the min and max word count
+      minWordCount = Math.min(minWordCount, wordCount);
+      maxWordCount = Math.max(maxWordCount, wordCount);
+
+      // Update word count stats for each word count
+      if (!wordCountStats[wordCount]) {
+        wordCountStats[wordCount] = 0;
+      }
+      wordCountStats[wordCount]++;
+
+      // Update classification stats for positive and negative comments
+      if (classification === 'Tích cực') {
+        this.commentStats.positive++;
+      } else if (classification === 'Tiêu cực') {
+        this.commentStats.negative++;
+      }
+    }
+  });
+
+  // Sort the word counts in ascending order
+  const categories = Object.keys(wordCountStats).sort((a, b) => a - b);
+
+  const binCount = Math.ceil(maxWordCount / 10);
+  const wordCountBins = {};
+
+  for (let i = 0; i < binCount; i++) {
+    const binStart = i * 10;
+    const binEnd = (i + 1) * 10 - 1;
+    wordCountBins[`${binStart}-${binEnd}`] = 0;
+  }
+
+  // Group the word counts into the bins
+  categories.forEach((wordCount) => {
+    const binStart = Math.floor(wordCount / 10) * 10;
+    const binEnd = binStart + 9;
+    const binKey = `${binStart}-${binEnd}`;
+    wordCountBins[binKey] += wordCountStats[wordCount];
+  });
+
+  // Prepare the X-axis categories and Y-axis data
+  const wordCountBinsSorted = Object.keys(wordCountBins).sort((a, b) => a - b); // Ensure categories are sorted from 0 to max
+  const wordCountBinCounts = wordCountBinsSorted.map((bin) => wordCountBins[bin]);
+
+  // Update the chart data and labels
+  this.wordCountChartOptions.xaxis.categories = wordCountBinsSorted;
+  this.wordCountChartSeries = [{ name: 'Bình luận', data: wordCountBinCounts }];
+  this.commentChartSeries = [this.commentStats.positive, this.commentStats.negative];
+},
 
     updatePagination() {
       this.totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-      this.paginateData();
+      this.changePage(1);
     },
-
-    paginateData() {
-      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-      const endIndex = startIndex + this.itemsPerPage;
-      this.paginatedData = this.filteredData.slice(startIndex, endIndex);
-    },
-
     changePage(page) {
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page;
-        this.paginateData();
+        this.paginatedData = this.filteredData.slice(
+          (this.currentPage - 1) * this.itemsPerPage,
+          this.currentPage * this.itemsPerPage
+        );
       }
     },
-
     filterData() {
-      if (this.classificationFilter) {
+      if (this.classificationFilter === '') {
+        this.filteredData = this.tableData;
+      } else {
         this.filteredData = this.tableData.filter(
           (item) => item['Classification'] === this.classificationFilter
         );
-      } else {
-        this.filteredData = this.tableData;
       }
       this.processData();
       this.updatePagination();
@@ -172,6 +224,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 .container {
