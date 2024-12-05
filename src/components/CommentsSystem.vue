@@ -25,6 +25,21 @@
         <div class="container mt-5">
           <div class="row d-flex justify-content-center">
             <div class="col-md-8">
+              <div
+                v-for="(comment, commentIndex) in status.comments"
+                :key="commentIndex"
+                class="d-flex justify-content-center py-2">
+                <div class="second py-2 px-2">
+                  <span>
+                    <small class="font-weight-bold text-primary">{{
+                      comment.author
+                    }}</small
+                    ><br />
+                    <small class="font-weight-bold">{{ comment.text }}</small>
+                  </span>
+                </div>
+                <small>{{ calculateTimeAgo(comment.timestamp) }}</small>
+              </div>
               <div class="card p-3">
                 <div class="d-flex justify-content-between align-items-center">
                   <div class="user d-flex flex-row align-items-center">
@@ -127,14 +142,6 @@
           </div>
         </div>
         <!-- Render comments dynamically for each status -->
-        <div
-          v-for="(comment, commentIndex) in status.comments"
-          :key="commentIndex"
-          class="d-flex justify-content-center py-2">
-          <div class="second py-2 px-2">
-            <span class="text1">{{ comment.text }}</span>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -150,92 +157,88 @@ export default {
         {
           text: "This is the first post. Feel free to leave a comment!",
           image:
-            "https://scontent.fhan11-1.fna.fbcdn.net/v/t39.30808-6/421145065_2388711054670515_2749220410013483800_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=105&ccb=1-7&_nc_sid=2285d6&_nc_ohc=E5M6mQx2RH8Q7kNvgGlqZIU&_nc_zt=23&_nc_ht=scontent.fhan11-1.fna&_nc_gid=Ad6IMLSt2BmVHKz7HA8_Qc8&oh=00_AYD9xRuTAudKW6B5Ge6Il1s_CxzxBnLIyNhBMZtb_vswBg&oe=674E232E", // Replace with actual image URL
-          comments: [], // Array for comments specific to this post
-          newComment: "", // New comment text for this post
-          is_post: true,
+            "https://scontent.fhan11-1.fna.fbcdn.net/v/t39.30808-6/421145065_2388711054670515_2749220410013483800_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=105&ccb=1-7&_nc_sid=2285d6&_nc_ohc=E5M6mQx2RH8Q7kNvgGlqZIU&_nc_zt=23&_nc_ht=scontent.fhan11-1.fna&_nc_gid=Ad6IMLSt2BmVHKz7HA8_Qc8&oh=00_AYD9xRuTAudKW6B5Ge6Il1s_CxzxBnLIyNhBMZtb_vswBg&oe=674E232E",
+          comments: [],
+          newComment: "",
         },
         {
           text: "This is the second post. Share your thoughts in the comments.",
           image:
-            "https://scontent.fhan11-1.fna.fbcdn.net/v/t39.30808-6/464264762_1043515390806199_4841784333295455722_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=aa7b47&_nc_ohc=7KpMHo73M48Q7kNvgGA9yXM&_nc_zt=23&_nc_ht=scontent.fhan11-1.fna&_nc_gid=AMpttSKJDS4ifE8C5xdHe0c&oh=00_AYDwjou2ZCp5EVoUIvjj6mP_xSgB5RWa0cxlbEbuV_sdNg&oe=674E10E8", // Replace with actual image URL
-          comments: [], // Array for comments specific to this post
-          newComment: "", // New comment text for this post
-          is_post: true,
+            "https://scontent.fhan11-1.fna.fbcdn.net/v/t39.30808-6/464264762_1043515390806199_4841784333295455722_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=aa7b47&_nc_ohc=7KpMHo73M48Q7kNvgGA9yXM&_nc_zt=23&_nc_ht=scontent.fhan11-1.fna&_nc_gid=AMpttSKJDS4ifE8C5xdHe0c&oh=00_AYDwjou2ZCp5EVoUIvjj6mP_xSgB5RWa0cxlbEbuV_sdNg&oe=674E10E8",
+          comments: [],
+          newComment: "",
         },
       ],
     };
   },
   methods: {
-    // Add comment for a specific status
+    // Calculate the time ago for a given timestamp
+    calculateTimeAgo(timestamp) {
+      if (!timestamp) return "Không xác định"; // Handle undefined or invalid timestamps
+
+      const now = new Date();
+      const time = new Date(timestamp);
+
+      if (isNaN(time.getTime())) return "Không xác định"; // Return "Không xác định" if invalid
+
+      const diff = Math.floor((now - time) / 1000); // Difference in seconds
+
+      if (diff < 60) return `${diff} giây trước`;
+      if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+      return `${Math.floor(diff / 86400)} ngày trước`;
+    },
+
     addComment(status) {
-      // Removed the 'index' parameter
       const newCommentText = status.newComment.trim();
-      if (newCommentText !== "") {
-        const newComment = {
-          text: newCommentText,
-          author: "Anonymous",
-          avatar: "https://i.imgur.com/tPvlEdq.jpg",
-          upvotes: "",
-          translatedText: "",
-          prediction: "",
-          classificationTime: "",
-          translationTime: "",
-          classification: "",
-          probability: "",
-          is_post: false,
-        };
+      if (!newCommentText) return;
 
-        // Add comment locally to the corresponding status
-        status.comments.unshift(newComment);
+      const newComment = {
+        text: newCommentText,
+        author: "Processing...", // Placeholder for the author
+        avatar: "https://i.imgur.com/tPvlEdq.jpg",
+        translatedText: "",
+        classification: "",
+        timestamp: new Date(), // Adding timestamp here
+      };
 
-        // Send comment to Python backend
-        axios
-          .post("http://127.0.0.1:5000/add_comment", { text: newCommentText }) // Only send text
-          .then((response) => {
-            const {
-              translated_text,
-              prediction,
-              probability,
-              translation_time,
-              classification_time,
-            } = response.data;
+      // Add the comment locally
+      status.comments.unshift(newComment);
 
-            // Log the response to console
-            console.log(`New Comment Received: ${newCommentText}`);
-            console.log(`Translated Text: ${translated_text}`);
-            console.log(`Prediction Result: ${prediction}`);
-            console.log(`Classification Probability: ${probability}`);
-            console.log(`Translation Time: ${translation_time} seconds`);
-            console.log(`Classification Time: ${classification_time} seconds`);
+      axios
+        .post("http://127.0.0.1:5000/add_comment", { text: newCommentText })
+        .then((response) => {
+          const {
+            translated_text,
+            prediction,
+            probability,
+            translation_time,
+            classification_time,
+            user_id,
+          } = response.data;
 
-            // Now, update the comment in the array with backend data
-            const updatedComment = {
-              ...newComment, // Keep the original data
-              translatedText: translated_text,
-              prediction: prediction,
-              probability: probability, // Store the probability
-              translationTime: translation_time,
-              classificationTime: classification_time,
-              classification: prediction === 0 ? "Tích cực" : "Tiêu cực",
-            };
-
-            // Directly update the comment in the array
-            status.comments[0] = updatedComment; // Update the first comment (index 0)
-
-            console.log("Comment processed successfully:", response.data);
-          })
-          .catch((error) => {
-            console.error("Error sending comment:", error);
+          // Update the comment with backend data
+          Object.assign(newComment, {
+            author: `${user_id}`,
+            translatedText: translated_text,
+            classification: prediction === 0 ? "Tích cực" : "Tiêu cực",
+            probability: (probability * 100).toFixed(2),
+            translationTime: translation_time,
+            classificationTime: classification_time,
           });
 
-        status.newComment = ""; // Clear the input field for this status
-      }
+          console.log("Comment processed:", response.data);
+        })
+        .catch((error) => {
+          console.error("Error processing comment:", error);
+          newComment.author = "Error retrieving User ID"; // In case of error
+        });
+
+      status.newComment = ""; // Clear the input field
     },
   },
 };
 </script>
-
 <style lang="css" scoped>
 .img-fluid {
   width: 60%;
